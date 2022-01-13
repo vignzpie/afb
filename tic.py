@@ -85,8 +85,9 @@ if __name__ == '__main__':
             if len(input_int_array) != 2:
                 raise Exception("Please enter only two integers.")
             else:
-
-        except (IndexError, ValueError, TypeError):
+                pass
+            row, col = input_int_array
+        except:
             print("Enter the row and column of your choice separated by space.\n Example: 1 1")
             print("Try again\n")
             #
@@ -94,7 +95,7 @@ if __name__ == '__main__':
 
             continue
         else:
-            is_winner = my_g.turn(player, )
+            is_winner = my_g.turn(player, row, col)
             if is_winner or count == 8:
                 print(f"Player {player} WON!!")
                 break
