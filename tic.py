@@ -38,16 +38,20 @@ class Grid:
         self.n = 3
         self.x = -1
         self.o = 1
-
         self.grid = [[0 for i in range(self.n)] for j in range(self.n)]
 
-        # [[0,0], [0,1], [0,2],     [1,0], [1,1], [1,2],    [2,0], [2,1], [2,2]]
+        self.available_slots_map = {
+            "seq_0": [[0, 0], [0, 1], [0, 2]],
+            "seq_1": [[1, 0], [1, 1], [1, 2]],
+            "seq_2": [[2, 0], [2, 1], [2, 2]],
+            "seq_3": [[0, 0], [1, 0], [2, 0]],
+            "seq_4": [[0, 1], [1, 1], [2, 1]],
+            "seq_5": [[0, 2], [1, 2], [2, 2]],
+            "seq_6": [[0, 0], [1, 1], [2, 2]],
+            "seq_7": [[2, 0], [1, 1], [0, 2]]
+        }
         self.seq_row = [0]*3
-
-        # [[0,0], [[1,0], [2,0],    [0,1], [1,1], [2,1],    [0,2], [1,2], [2,2]]
         self.seq_col = [0]*3
-
-        # [[0,0], [1,1], [2,2],     [2,0], [1,1], [0,2]]
         self.seq_dia = [0]*2
 
     def __str__(self):
@@ -56,37 +60,67 @@ class Grid:
             buff += " ".join([str(e) for e in r]) + "\n"
         return buff.replace("0", "-")
 
+    def mark_slot(self, row, col, score):
+        if self.is_slot_available(row, col):
+            self.grid[row][col] = score
+
     def is_slot_available(self, row, col):
         return self.grid[row][col] == 0
 
-    def turn(self, player, row, col):
-        self.grid[row][col] = player
+    def get_flat_list(self, is_abs=False):
+        if is_abs:
+            return [abs(item) for sublist in [self.seq_row, self.seq_col, self.seq_dia] for item in sublist]
+        else:
+            return [item for sublist in [self.seq_row, self.seq_col, self.seq_dia] for item in sublist]
 
+    def get_next_turn(self, comp_player):
+        flat_list = self.get_flat_list()
+        print(flat_list)
+        for i in [2, -2, -1, 1, 0]:
+            if i in flat_list:
+                seq_idx = flat_list.index(i)
+                if len(self.available_slots_map[f"seq_{seq_idx}"]) > 0:
+                    print(f"flat_list index: {seq_idx}")
+                    return self.available_slots_map[f"seq_{seq_idx}"][0]
+
+    def turn(self, player, row, col):
+        self.mark_slot(row, col, player)
         player_score = self.x if player == 'X' else self.o
 
         # row check
         self.seq_row[row] += player_score
-
+        self.available_slots_map[f"seq_{row}"].remove([row, col])
         # col check
         self.seq_col[col] += player_score
-
+        self.available_slots_map[f"seq_{col+3}"].remove([row, col])
         # dia check
         if row == col:
             self.seq_dia[0] += player_score
-            if row == 1:
-                self.seq_dia[1] += player_score
-        elif abs(row-col) == 2:
+            self.available_slots_map[f"seq_6"].remove([row, col])
+        if row == self.n - 1 - col:
             self.seq_dia[1] += player_score
+            self.available_slots_map[f"seq_7"].remove([row, col])
 
-        # print([item for sublist in [self.seq_row, self.seq_col, self.seq_dia] for item in sublist])
-        flat_list = [abs(item) for sublist in [self.seq_row, self.seq_col, self.seq_dia] for item in sublist]
-        # print(flat_list)
-        return self.n in flat_list
+        is_winner = self.n in self.get_flat_list(is_abs=True)
+        return is_winner
+
+    def play_next_turn(self, player):
+        row, col = self.get_next_turn(player)
+        return self.turn(player, row, col)
+
+
+def declare_winner(is_winner):
+    if is_winner:
+        print(f"{bcolors.OKGREEN}Player {player} WON!!{bcolors.ENDC}")
+        sys.exit()
 
 
 if __name__ == '__main__':
 
     count = 0
+    is_player_comp = input(f"Do you want to play against a computer? (y/N)")
+    is_player_comp = True if "y" == is_player_comp.lower() else False
+
     player_1 = input(f"Player 1, select your symbol (X/O): ")
     player_2 = "X" if player_1 == "O" else "O"
 
@@ -97,17 +131,11 @@ if __name__ == '__main__':
     play_grid = Grid()
     while True:
         player = [player_1, player_2][count % 2]
-        print(f"Player '{player}' Turn: \n ('q' to exit)")
+        print(f"Player '{player}' Turn ('q' to exit):")
 
         try:
             row = input("Enter the row:")
-            if row.lower() == "q":
-                raise KeyboardInterrupt
-
             col = input("Enter the col:")
-            if col.lower() == "q":
-                raise KeyboardInterrupt
-
             row, col = int(row), int(col)
             if not (0 <= row <= 2 and 0 <= col <= 2):
                 print(f"{bcolors.FAIL}Error: The values can be between 0 and 2 only.{bcolors.ENDC}")
@@ -129,15 +157,16 @@ if __name__ == '__main__':
 
         else:
             is_winner = play_grid.turn(player, int(row), int(col))
-            if is_winner:
-                print(f"{bcolors.OKGREEN}Player {player} WON!!{bcolors.ENDC}")
-                break
-            if count == 7:
-                if 2 not in [abs(item) for sublist in [play_grid.seq_row, play_grid.seq_col, play_grid.seq_dia] for item in sublist]:
-                    print("Draw!! Exiting.")
-                    break
-            elif count == 8:
+            print(play_grid)
+            declare_winner(is_winner)
+            if count >= 8:
                 print("Its a draw!")
                 break
+
             count += 1
-            print(play_grid)
+
+            if is_player_comp:
+                is_winner = play_grid.play_next_turn(player_2)
+                print(play_grid)
+                declare_winner(is_winner)
+                count += 1
