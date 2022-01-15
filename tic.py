@@ -15,7 +15,21 @@
 #   [1,0],      [1,1],      [1,2],
 #   [2,0],      [2,1],      [2,2]
 # ]
+from __future__ import print_function
+import sys
 import argparse
+
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 
 class Grid:
@@ -43,7 +57,7 @@ class Grid:
             print( " ".join(str(e) for e in r).replace("0", "-"))
         print("\n")
 
-        player_score = self.x if player == 'x' else self.o
+        player_score = self.x if player == 'X' else self.o
 
         # row check
         self.seq_row[row] += player_score
@@ -73,29 +87,33 @@ if __name__ == '__main__':
     player_1 = input(f"Player 1, select your symbol (X/O): ")
     player_2 = "X" if player_1 == "O" else "O"
 
-    # Check for valid symbols
+    if {"X", "O"} != {player_1, player_2}:
+        sys.stderr.write("Please choose between uppercase X and O only.")
 
     my_g = Grid()
     while True:
         player = [player_1, player_2][count % 2]
-        print(f"Player '{player}' Turn:")
+        print(f"Player '{player}' Turn: \n ('q' to exit)")
 
         try:
-            input_int_array = [int(x) for x in input("Enter the slot ('row col'):  ").split()]
-            if len(input_int_array) != 2:
-                raise Exception("Please enter only two integers.")
-            else:
-                pass
-            row, col = input_int_array
-        except:
-            print("Enter the row and column of your choice separated by space.\n Example: 1 1")
-            print("Try again\n")
-            #
-            # print("Try again\n")
+            row = input("Enter the row:")
+            if row.lower() == "q":
+                break
+            col = input("Enter the col:")
+            if col.lower() == "q":
+                break
 
+            elif not (0 <= int(row) <= 2 and 0 <= int(col) <= 2):
+                # print("The values can be between 0 and 2 only.")
+                print(f"{bcolors.FAIL}Error: The values can be between 0 and 2 only.?{bcolors.ENDC}")
+                raise Exception("Invalid Input")
+
+        except:
+            print("Enter the integer for row and column of your choice.\n")
             continue
+
         else:
-            is_winner = my_g.turn(player, row, col)
+            is_winner = my_g.turn(player, int(row), int(col))
             if is_winner or count == 8:
                 print(f"Player {player} WON!!")
                 break
