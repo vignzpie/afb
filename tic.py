@@ -17,7 +17,6 @@
 # ]
 from __future__ import print_function
 import sys
-import argparse
 
 
 class bcolors:
@@ -33,6 +32,7 @@ class bcolors:
 
 
 class Grid:
+    grid = []
 
     def __init__(self):
         self.n = 3
@@ -49,13 +49,15 @@ class Grid:
 
         # [[0,0], [1,1], [2,2],     [2,0], [1,1], [0,2]]
         self.seq_dia = [0]*2
-#   [2,1]
+
+    def __str__(self):
+        buff = ""
+        for r in self.grid:
+            buff += " ".join([str(e) for e in r]) + "\n"
+        return buff.replace("0", "-")
 
     def turn(self, player, row, col):
         self.grid[row][col] = player
-        for r in self.grid:
-            print( " ".join(str(e) for e in r).replace("0", "-"))
-        print("\n")
 
         player_score = self.x if player == 'X' else self.o
 
@@ -67,18 +69,16 @@ class Grid:
 
         # dia check
         if row == col:
-            self.seq_dia[row] += player_score
+            self.seq_dia[0] += player_score
             if row == 1:
-                self.seq_dia[0] += player_score
+                self.seq_dia[1] += player_score
         elif abs(row-col) == 2:
             self.seq_dia[1] += player_score
 
+        # print([item for sublist in [self.seq_row, self.seq_col, self.seq_dia] for item in sublist])
         flat_list = [abs(item) for sublist in [self.seq_row, self.seq_col, self.seq_dia] for item in sublist]
-        print(flat_list)
-        if self.n in flat_list:
-            return True
-        else:
-            return False
+        # print(flat_list)
+        return self.n in flat_list
 
 
 if __name__ == '__main__':
@@ -89,8 +89,9 @@ if __name__ == '__main__':
 
     if {"X", "O"} != {player_1, player_2}:
         sys.stderr.write("Please choose between uppercase X and O only.")
+        sys.exit(0)
 
-    my_g = Grid()
+    play_grid = Grid()
     while True:
         player = [player_1, player_2][count % 2]
         print(f"Player '{player}' Turn: \n ('q' to exit)")
@@ -98,23 +99,42 @@ if __name__ == '__main__':
         try:
             row = input("Enter the row:")
             if row.lower() == "q":
-                break
+                raise KeyboardInterrupt
+
             col = input("Enter the col:")
             if col.lower() == "q":
-                break
+                raise KeyboardInterrupt
 
-            elif not (0 <= int(row) <= 2 and 0 <= int(col) <= 2):
-                # print("The values can be between 0 and 2 only.")
-                print(f"{bcolors.FAIL}Error: The values can be between 0 and 2 only.?{bcolors.ENDC}")
+            row, col = int(row), int(col)
+            if not (0 <= row <= 2 and 0 <= col <= 2):
+                print(f"{bcolors.FAIL}Error: The values can be between 0 and 2 only.{bcolors.ENDC}")
                 raise Exception("Invalid Input")
 
+            # TODO: handle this as classmethod
+            if play_grid.grid[row][col] != 0:
+                print(f"{bcolors.WARNING}Warning: The slot ({row},{col}) is already taken.{bcolors.ENDC}")
+                raise Exception("Invalid Input")
+
+        except KeyboardInterrupt:
+            sys.exit(0)
+
         except:
-            print("Enter the integer for row and column of your choice.\n")
+            # TODO: Extend Exception to raise invalid input.
+            print(f"Enter the integer for row and column of your choice.")
+            print(f"Player '{player}', play again.\n")
             continue
 
         else:
-            is_winner = my_g.turn(player, int(row), int(col))
-            if is_winner or count == 8:
-                print(f"Player {player} WON!!")
+            is_winner = play_grid.turn(player, int(row), int(col))
+            if is_winner:
+                print(f"{bcolors.OKGREEN}Player {player} WON!!{bcolors.ENDC}")
+                break
+            if count == 7:
+                if 2 not in [abs(item) for sublist in [play_grid.seq_row, play_grid.seq_col, play_grid.seq_dia] for item in sublist]:
+                    print("Draw!! Exiting.")
+                    break
+            elif count == 8:
+                print("Its a draw!")
                 break
             count += 1
+            print(play_grid)
