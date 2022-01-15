@@ -56,6 +56,9 @@ class Grid:
             buff += " ".join([str(e) for e in r]) + "\n"
         return buff.replace("0", "-")
 
+    def is_slot_available(self, row, col):
+        return self.grid[row][col] == 0
+
     def turn(self, player, row, col):
         self.grid[row][col] = player
 
@@ -110,16 +113,16 @@ if __name__ == '__main__':
                 print(f"{bcolors.FAIL}Error: The values can be between 0 and 2 only.{bcolors.ENDC}")
                 raise Exception("Invalid Input")
 
-            # TODO: handle this as classmethod
-            if play_grid.grid[row][col] != 0:
+            if not play_grid.is_slot_available(row, col):
                 print(f"{bcolors.WARNING}Warning: The slot ({row},{col}) is already taken.{bcolors.ENDC}")
                 raise Exception("Invalid Input")
 
         except KeyboardInterrupt:
             sys.exit(0)
 
-        except:
+        except Exception as e:
             # TODO: Extend Exception to raise invalid input.
+            print(e)
             print(f"Enter the integer for row and column of your choice.")
             print(f"Player '{player}', play again.\n")
             continue
