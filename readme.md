@@ -2,7 +2,7 @@
 
 
 ### Dependencies
-Python version: 3.x (3.8.9 user here)
+Python version: 3.x (3.8.9 used here)
 
 ### Usage
 ```bash
