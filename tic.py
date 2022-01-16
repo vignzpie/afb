@@ -19,6 +19,42 @@ from __future__ import print_function
 import sys
 
 
+class GridError(Exception):
+
+    def __init__(self, row, col, message):
+        self.slot = [str(row), str(col)]
+        self.message = message
+
+        super().__init__(self.message)
+
+    def __str__(self):
+        return f"Invalid Input ({', '.join(self.slot)}). -> {self.message}"
+
+
+class GridInputError(GridError):
+
+    def __init__(self, row, col):
+
+        self.message = f"Given slot is not in range (0, 2). " \
+                       f"Please choose values for row and col between 0 and 2."
+        super().__init__(row, col, self.message)
+
+
+class GridSlotError(GridError):
+
+    def __init__(self, row, col):
+        self.message = f"Given slot is already occupied. Please choose another slot."
+        super().__init__(row, col, self.message)
+
+
+class UserSymbolError(Exception):
+    def __init__(self):
+        self.message = "User symbol has to be either of uppercase 'X' or 'O' only. Please restart."
+
+    def __str__(self):
+        return f"{bcolors.FAIL}{self.message}{bcolors.ENDC}"
+
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -63,6 +99,8 @@ class Grid:
     def mark_slot(self, row, col, score):
         if self.is_slot_available(row, col):
             self.grid[row][col] = score
+        else:
+            raise GridSlotError(row, col)
 
     def is_slot_available(self, row, col):
         return self.grid[row][col] == 0
@@ -75,12 +113,10 @@ class Grid:
 
     def get_next_turn(self, comp_player):
         flat_list = self.get_flat_list()
-        print(flat_list)
         for i in [2, -2, -1, 1, 0]:
             if i in flat_list:
                 seq_idx = flat_list.index(i)
                 if len(self.available_slots_map[f"seq_{seq_idx}"]) > 0:
-                    print(f"flat_list index: {seq_idx}")
                     return self.available_slots_map[f"seq_{seq_idx}"][0]
 
     def turn(self, player, row, col):
@@ -109,55 +145,57 @@ class Grid:
         return self.turn(player, row, col)
 
 
-def declare_winner(is_winner):
-    if is_winner:
-        print(f"{bcolors.OKGREEN}Player {player} WON!!{bcolors.ENDC}")
-        sys.exit()
-
-
 if __name__ == '__main__':
 
+    def declare_winner(is_winner):
+        if is_winner:
+            print(f"{bcolors.OKGREEN}Player {player} WON!!{bcolors.ENDC}")
+            sys.exit()
+
+
+    def get_slot_input():
+        _row = input("Enter the row:")
+        _col = input("Enter the col:")
+        if _row.isnumeric() and _col.isnumeric():
+            raise GridInputError(_row, _col)
+        return int(_row), int(_col)
+
+
     count = 0
+    # Prompt for choosing computer or human
     is_player_comp = input(f"Do you want to play against a computer? (y/N)")
     is_player_comp = True if "y" == is_player_comp.lower() else False
 
+    # Prompt for choosing symbols
     player_1 = input(f"Player 1, select your symbol (X/O): ")
+    if player_1 not in ("X", "O"):
+        raise UserSymbolError
     player_2 = "X" if player_1 == "O" else "O"
-
-    if {"X", "O"} != {player_1, player_2}:
-        sys.stderr.write("Please choose between uppercase X and O only.")
-        sys.exit(0)
 
     play_grid = Grid()
     while True:
         player = [player_1, player_2][count % 2]
-        print(f"Player '{player}' Turn ('q' to exit):")
+        print(f"Player '{player}' Turn:")
 
         try:
-            row = input("Enter the row:")
-            col = input("Enter the col:")
-            row, col = int(row), int(col)
+            row, col = get_slot_input()
             if not (0 <= row <= 2 and 0 <= col <= 2):
-                print(f"{bcolors.FAIL}Error: The values can be between 0 and 2 only.{bcolors.ENDC}")
-                raise Exception("Invalid Input")
+                raise GridInputError(row, col)
 
             if not play_grid.is_slot_available(row, col):
-                print(f"{bcolors.WARNING}Warning: The slot ({row},{col}) is already taken.{bcolors.ENDC}")
-                raise Exception("Invalid Input")
+                raise GridSlotError(row, col)
 
         except KeyboardInterrupt:
             sys.exit(0)
 
         except Exception as e:
-            # TODO: Extend Exception to raise invalid input.
-            print(e)
-            print(f"Enter the integer for row and column of your choice.")
-            print(f"Player '{player}', play again.\n")
+            print(f"{bcolors.FAIL}{e}{bcolors.ENDC}\n")
+            print(f"Player '{player}', try again.")
             continue
 
         else:
             is_winner = play_grid.turn(player, int(row), int(col))
-            print(play_grid)
+            # print(play_grid)
             declare_winner(is_winner)
             if count >= 8:
                 print("Its a draw!")
@@ -167,6 +205,6 @@ if __name__ == '__main__':
 
             if is_player_comp:
                 is_winner = play_grid.play_next_turn(player_2)
-                print(play_grid)
+                # print(play_grid)
                 declare_winner(is_winner)
                 count += 1
