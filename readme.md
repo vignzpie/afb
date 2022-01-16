@@ -9,7 +9,7 @@ Python version: 3.x (3.8.9 user here)
 python3 tic.py
 ```
 
-###CLI
+### CLI
 ```commandline
 ❯ python tic.py
 Do you want to play against a computer? (y/N)y
