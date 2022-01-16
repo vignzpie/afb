@@ -103,7 +103,6 @@ class Grid:
     Raises:
         GridSlotError: Exception if slot is already occupied while assigning symbol to the slot.
     """
-    # grid = []
 
     def __init__(self):
         # Size of the grid
@@ -112,7 +111,7 @@ class Grid:
         self.x = -1
         self.o = 1
         # Empty for grid of n*n matrix where all elements is set to 0.
-        self.grid = [[0 for i in range(self.n)] for j in range(self.n)]
+        self.grid_board = [[0 for i in range(self.n)] for j in range(self.n)]
         # A dictionary to keep track of availability of slots across the 9 interested sequences.
         self.available_slots_map = {
             "seq_0": [[0, 0], [0, 1], [0, 2]],
@@ -138,7 +137,7 @@ class Grid:
         """
 
         buff = ""
-        for r in self.grid:
+        for r in self.grid_board:
             buff += " ".join([str(e) for e in r]) + "\n"
         return buff.replace("0", "-")
 
@@ -156,7 +155,7 @@ class Grid:
         """
 
         if self.is_slot_available(row, col):
-            self.grid[row][col] = score
+            self.grid_board[row][col] = score
         else:
             raise GridSlotError(row, col)
 
@@ -171,8 +170,7 @@ class Grid:
         Returns:
             [bool]: True if the slot is empty/available
         """
-
-        return self.grid[row][col] == 0
+        return [row, col] in self.available_slots_map[f"seq_{row}"]
 
     def get_flat_list(self, is_abs=False):
         """
@@ -330,7 +328,7 @@ if __name__ == '__main__':
 
         try:
             row, col = get_slot_input()
-            # Out of grid xception
+            # Out of grid exception
             if not (0 <= row <= 2 and 0 <= col <= 2):
                 raise GridInputError(row, col)
 
@@ -361,6 +359,6 @@ if __name__ == '__main__':
 
             if is_player_comp:
                 is_winner = play_grid.play_next_turn(player_2)
-                print(play_grid)
+                print(f"Player {player} played: \n{play_grid}")
                 declare_winner(is_winner, player)
                 count += 1
