@@ -18,8 +18,6 @@
         https://github.com/vignzpie/afb/blob/main/tic.py
 """
 
-from __future__ import print_function
-from msilib import sequence
 import sys
 
 
@@ -105,7 +103,7 @@ class Grid:
     Raises:
         GridSlotError: Exception if slot is already occupied while assigning symbol to the slot.
     """
-    grid = []
+    # grid = []
 
     def __init__(self):
         # Size of the grid
@@ -199,7 +197,7 @@ class Grid:
             Next best move is determined in the following priority:
                 - Move if it's a winner move. (i == 2)
                 - Move if it prevents opponent from winning. (i == -2)
-                - Move to any sequence that doesnt let opponent to score -2. (i == -1)
+                - Move to any sequence that doesn't let opponent score -2. (i == -1)
                 - Move to any sequence that lets the computer player to score 2. (i == 1)
                 - Move to any available slot. (i == 0)
             Determines the next best move prioritizing winning move over preventing opponent winner move.
@@ -225,7 +223,7 @@ class Grid:
     def turn(self, player, row, col):
         """
             This method marks the slot in the grid as occupied by assigning the player score.
-            Manipulates the value of 8 sequences of interest by adding player score.
+            Manipulates the value of 8 sequences of interest, by adding player score.
             Manipulates the available_slot_map by removing the slots that are occupied.
             If any sequences is complete (by checking if 3 is present in the sequence),
             the current player who just made a turn is flagged as winner.
@@ -239,8 +237,9 @@ class Grid:
         Returns:
             [bool]: boolean flag to determine is if the current player is a winner.
         """
-        self.mark_slot(row, col, player)
         player_score = self.x if player == 'X' else self.o
+        self.mark_slot(row, col, player)
+
 
         # row check
         self.seq_row[row] += player_score
@@ -260,6 +259,7 @@ class Grid:
         return is_winner
 
     def play_next_turn(self, player):
+
         """
             Get the next best slot by calling get_next_turn() method.
             The resultant slot is fed to turn method to make the next turn.
@@ -270,7 +270,8 @@ class Grid:
         Returns:
             [bool]: A function call to turn method that returns bool declaring a winner or not.
         """
-        row, col = self.get_next_turn(player)
+        player_score = self.x if player == 'X' else self.o
+        row, col = self.get_next_turn(player_score)
         return self.turn(player, row, col)
 
 
@@ -303,7 +304,7 @@ if __name__ == '__main__':
         _row = input("Enter the row:")
         _col = input("Enter the col:")
         # Verify input is an integer.
-        if _row.isnumeric() and _col.isnumeric():
+        if not (_row.isnumeric() and _col.isnumeric()):
             raise GridInputError(_row, _col)
         return int(_row), int(_col)
 
@@ -322,6 +323,7 @@ if __name__ == '__main__':
 
     play_grid = Grid()
     while True:
+        # print(play_grid)
         # Player 1 plays the even turns.
         player = [player_1, player_2][count % 2]
         print(f"Player '{player}' Turn:")
@@ -347,7 +349,7 @@ if __name__ == '__main__':
 
         else:
             is_winner = play_grid.turn(player, int(row), int(col))
-            # print(play_grid)
+            print(play_grid)
 
             declare_winner(is_winner, player)
             # All turns are exhausted when count = 8
@@ -359,6 +361,6 @@ if __name__ == '__main__':
 
             if is_player_comp:
                 is_winner = play_grid.play_next_turn(player_2)
-                # print(play_grid)
+                print(play_grid)
                 declare_winner(is_winner, player)
                 count += 1
